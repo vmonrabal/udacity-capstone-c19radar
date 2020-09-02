@@ -1,0 +1,262 @@
+service:
+  name: sls-c19radar-app
+
+plugins:
+  - serverless-webpack
+  - serverless-reqvalidator-plugin
+  - serverless-iam-roles-per-function
+  - serverless-aws-documentation
+  - serverless-plugin-tracing
+  - serverless-dynamodb-local
+  - serverless-offline
+
+provider:
+
+  name: aws
+  runtime: nodejs10.x
+
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, 'eu-central-1'}
+
+#  tracing:
+#    lambda: true
+#    apiGateway: true
+
+  environment:
+    CONTACTS_TABLE: Contacts-${self:provider.stage}
+    CONTACTS_TABLE_EMAIL_INDEX: ContactsEmailIndex-${self:provider.stage}
+    CONTACTS_TABLE_WHEN_INDEX: ContactsWhenIndex-${self:provider.stage}
+    AUTH0_JSON_WEB_KEY_SET: https://dev-34g5e566.eu.auth0.com/.well-known/jwks.json
+    EVIDENCE_S3_BUCKET: capstone-c19radar-bucket-${self:provider.stage}
+    SIGNED_URL_EXPIRATION: 300
+
+#  iamRoleStatements:
+#    - Effect: Allow
+#      Action:
+#        - 'xray:PutTraceSegments'
+#        - 'xray:PutTelemetryRecords'
+#      Resource:
+#        - '*'
+
+custom:
+  serverless-offline:
+    port: 3003
+
+  dynamodb:
+    stages:
+      - ${self:provider.stage}
+    start:
+      port: 8000
+      inMemory: true
+      migrate: true
+
+  documentation:
+    api:
+      info:
+        version: v1.0.0
+        title: C19Radar API
+        description: Serverless application to manage contact meetings in Covid-19 times
+#    models:
+#      - name: CreateContactRequest
+#        contentType: application/json
+#        schema: ${file(models/create-todo-request.json)}
+#      - name: UpdateContactRequest
+#        contentType: application/json
+#        schema: ${file(models/update-todo-request.json)}
+
+functions:
+
+  Auth:
+    handler: src/lambda/auth/auth0Authorizer.handler
+
+  GetTodos:
+    handler: src/lambda/http/getContacts.handler
+    events:
+      - http:
+          method: get
+          path: contacts
+          cors: true
+#          authorizer: Auth
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:Query
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.CONTACTS_TABLE}/index/${self:provider.environment.CONTACTS_TABLE_WHEN_INDEX}
+
+  CreateContact:
+    handler: src/lambda/http/createContact.handler
+    events:
+      - http:
+          method: post
+          path: contacts
+          cors: true
+#          authorizer: Auth
+#          reqValidatorName: RequestBodyValidator
+          documentation:
+            summary: Create new c19 contact
+            description: Create new meeting with c19 contact
+#            requestModels:
+#              'application/json': CreateContactRequest
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:Query
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.CONTACTS_TABLE}/index/${self:provider.environment.CONTACTS_TABLE_EMAIL_INDEX}
+      - Effect: Allow
+        Action:
+          - dynamodb:PutItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.CONTACTS_TABLE}
+
+  UpdateTodo:
+    handler: src/lambda/http/updateContact.handler
+    events:
+      - http:
+          method: patch
+          path: contacts/{contactId}
+          cors: true
+#          authorizer: Auth
+#          reqValidatiorName: RequestBodyValidator
+#          documentation:
+#            summary: Update c19 contact
+#            description: Update meeting with c19 contact
+#            requestModels:
+#              'application/json': UpdateContactRequest
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:UpdateItem
+          - dynamodb:Query
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.CONTACTS_TABLE}
+
+  DeleteTodo:
+    handler: src/lambda/http/deleteContact.handler
+    events:
+      - http:
+          method: delete
+          path: contacts/{contactId}
+          cors: true
+#          authorizer: Auth
+          documentation:
+            summary: Delete c19 contact
+            description: Delete meeting with c19 contact
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:DeleteItem
+          - dynamodb:GetItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.CONTACTS_TABLE}
+      - Effect: Allow
+        Action:
+          - s3:DeleteObject
+        Resource: arn:aws:s3:::${self:provider.environment.EVIDENCE_S3_BUCKET}/*
+
+  uploadEvidence:
+    handler: src/lambda/http/uploadEvidence.handler
+    events:
+      - http:
+          method: post
+          path: contacts/{contactId}/evidence
+          cors: true
+#          authorizer: Auth
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - s3:PutObject
+        Resource: arn:aws:s3:::${self:provider.environment.EVIDENCE_S3_BUCKET}/*
+      - Effect: Allow
+        Action:
+          - dynamodb:UpdateItem
+          - dynamodb:GetItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.CONTACTS_TABLE}
+
+resources:
+  Resources:
+    GatewayResponseDefault4XX:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+          gatewayresponse.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST'"
+        ResponseType: DEFAULT_4XX
+        RestApiId:
+          Ref: ApiGatewayRestApi
+
+    ContactsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: userId
+            AttributeType: S
+          - AttributeName: contactId
+            AttributeType: S
+          - AttributeName: email
+            AttributeType: S
+          - AttributeName: when
+            AttributeType: S
+        KeySchema:
+          - AttributeName: userId
+            KeyType: HASH
+          - AttributeName: contactId
+            KeyType: RANGE
+        BillingMode: PAY_PER_REQUEST
+        TableName: ${self:provider.environment.CONTACTS_TABLE}
+        GlobalSecondaryIndexes:
+          - IndexName: ${self:provider.environment.CONTACTS_TABLE_WHEN_INDEX}
+            KeySchema:
+              - AttributeName: userId
+                KeyType: HASH
+              - AttributeName: when
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL # What attributes will be copied to an index
+          - IndexName: ${self:provider.environment.CONTACTS_TABLE_EMAIL_INDEX}
+            KeySchema:
+              - AttributeName: userId
+                KeyType: HASH
+              - AttributeName: email
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL # What attributes will be copied to an index
+
+#    RequestBodyValidator:
+#      Type: AWS::ApiGateway::RequestValidator
+#      Properties:
+#        Name: 'request-body-validator'
+#        RestApiId:
+#          Ref: ApiGatewayRestApi
+#        ValidateRequestBody: true
+#        ValidateRequestParameters: false
+
+    EvidenceBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:provider.environment.EVIDENCE_S3_BUCKET}
+        CorsConfiguration:
+          CorsRules:
+            -
+              AllowedMethods:
+                - GET
+                - PUT
+                - POST
+                - DELETE
+                - HEAD
+              AllowedOrigins:
+                - '*'
+              AllowedHeaders:
+                - '*'
+              MaxAge: 3000
+
+    BucketPolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        PolicyDocument:
+          Id: MyPolicy
+          Version: "2012-10-17"
+          Statement:
+            - Sid: PublicReadForGetBucketObjects
+              Effect: Allow
+              Principal: '*'
+              Action: 's3:GetObject'
+              Resource: 'arn:aws:s3:::${self:provider.environment.EVIDENCE_S3_BUCKET}/*'
+        Bucket: !Ref EvidenceBucket
