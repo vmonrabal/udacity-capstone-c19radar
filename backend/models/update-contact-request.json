@@ -1,21 +1,31 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "title": "create-todo",
+  "title": "update-contact",
   "type": "object",
   "properties": {
     "name": {
       "type": "string",
       "minLength": 5,
-      "maxLength": 20
+      "maxLength": 50
     },
-    "dueDate": {
+    "when": {
       "type": "string",
       "pattern": "[0-9]{4}-[0-9]{2}-[0-9]{2}"
+    },
+    "where": {
+      "type": "string",
+      "minLength": 5,
+      "maxLength": 120
+    },
+    "infected": {
+      "type": "boolean"
     }
   },
   "required": [
     "name",
-    "dueDate"
+    "when",
+    "where",
+    "boolean"
   ],
   "additionalProperties": false
 }

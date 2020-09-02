@@ -56,13 +56,13 @@ custom:
         version: v1.0.0
         title: C19Radar API
         description: Serverless application to manage contact meetings in Covid-19 times
-#    models:
-#      - name: CreateContactRequest
-#        contentType: application/json
-#        schema: ${file(models/create-todo-request.json)}
-#      - name: UpdateContactRequest
-#        contentType: application/json
-#        schema: ${file(models/update-todo-request.json)}
+    models:
+      - name: CreateContactRequest
+        contentType: application/json
+        schema: ${file(models/create-contact-request.json)}
+      - name: UpdateContactRequest
+        contentType: application/json
+        schema: ${file(models/update-contact-request.json)}
 
 functions:
 
@@ -91,12 +91,12 @@ functions:
           path: contacts
           cors: true
 #          authorizer: Auth
-#          reqValidatorName: RequestBodyValidator
+          reqValidatorName: RequestBodyValidator
           documentation:
             summary: Create new c19 contact
             description: Create new meeting with c19 contact
-#            requestModels:
-#              'application/json': CreateContactRequest
+            requestModels:
+              'application/json': CreateContactRequest
     iamRoleStatements:
       - Effect: Allow
         Action:
@@ -114,13 +114,13 @@ functions:
           method: patch
           path: contacts/{contactId}
           cors: true
-#          authorizer: Auth
-#          reqValidatiorName: RequestBodyValidator
-#          documentation:
-#            summary: Update c19 contact
-#            description: Update meeting with c19 contact
-#            requestModels:
-#              'application/json': UpdateContactRequest
+          authorizer: Auth
+          reqValidatiorName: RequestBodyValidator
+          documentation:
+            summary: Update c19 contact
+            description: Update meeting with c19 contact
+            requestModels:
+              'application/json': UpdateContactRequest
     iamRoleStatements:
       - Effect: Allow
         Action:
@@ -219,14 +219,14 @@ resources:
             Projection:
               ProjectionType: ALL # What attributes will be copied to an index
 
-#    RequestBodyValidator:
-#      Type: AWS::ApiGateway::RequestValidator
-#      Properties:
-#        Name: 'request-body-validator'
-#        RestApiId:
-#          Ref: ApiGatewayRestApi
-#        ValidateRequestBody: true
-#        ValidateRequestParameters: false
+    RequestBodyValidator:
+      Type: AWS::ApiGateway::RequestValidator
+      Properties:
+        Name: 'request-body-validator'
+        RestApiId:
+          Ref: ApiGatewayRestApi
+        ValidateRequestBody: true
+        ValidateRequestParameters: false
 
     EvidenceBucket:
       Type: AWS::S3::Bucket
