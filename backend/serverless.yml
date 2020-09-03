@@ -77,7 +77,7 @@ functions:
           method: get
           path: contacts
           cors: true
-#          authorizer: Auth
+          authorizer: Auth
     iamRoleStatements:
       - Effect: Allow
         Action:
@@ -91,7 +91,7 @@ functions:
           method: post
           path: contacts
           cors: true
-#          authorizer: Auth
+          authorizer: Auth
           reqValidatorName: RequestBodyValidator
           documentation:
             summary: Create new c19 contact
@@ -136,7 +136,7 @@ functions:
           method: delete
           path: contacts/{contactId}
           cors: true
-#          authorizer: Auth
+          authorizer: Auth
           documentation:
             summary: Delete c19 contact
             description: Delete meeting with c19 contact
@@ -158,7 +158,7 @@ functions:
           method: post
           path: contacts/{contactId}/evidence
           cors: true
-#          authorizer: Auth
+          authorizer: Auth
     iamRoleStatements:
       - Effect: Allow
         Action:
@@ -177,7 +177,7 @@ functions:
           method: post
           path: contacts/{contactId}/sendAlertMail
           cors: true
-          #          authorizer: Auth
+          authorizer: Auth
           documentation:
             summary: Send c19 alert email
             description: Send c19 alert email to contact
@@ -232,7 +232,7 @@ resources:
               - AttributeName: when
                 KeyType: RANGE
             Projection:
-              ProjectionType: ALL # What attributes will be copied to an index
+              ProjectionType: ALL
           - IndexName: ${self:provider.environment.CONTACTS_TABLE_EMAIL_INDEX}
             KeySchema:
               - AttributeName: userId
@@ -240,7 +240,7 @@ resources:
               - AttributeName: email
                 KeyType: RANGE
             Projection:
-              ProjectionType: ALL # What attributes will be copied to an index
+              ProjectionType: ALL
 
     RequestBodyValidator:
       Type: AWS::ApiGateway::RequestValidator
