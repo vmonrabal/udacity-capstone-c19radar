@@ -6,7 +6,7 @@ import { createLogger } from '../../utils/logger'
 import * as middy from 'middy'
 import { cors } from 'middy/middlewares'
 import { deleteContact } from '../../businessLogic/contacts'
-import {S3Helper} from "../../helper/S3Helper";
+import {S3Helper} from '../../helper/S3Helper'
 
 const logger = createLogger('deleteContacts')
 const s3Helper = new S3Helper()

@@ -29,6 +29,7 @@ provider:
     AUTH0_JSON_WEB_KEY_SET: https://dev-34g5e566.eu.auth0.com/.well-known/jwks.json
     EVIDENCE_S3_BUCKET: capstone-c19radar-bucket-${self:provider.stage}
     SIGNED_URL_EXPIRATION: 300
+    SES_SENDER_MAIL: sls.c19.radar.app@gmail.com
 
 #  iamRoleStatements:
 #    - Effect: Allow
@@ -107,7 +108,7 @@ functions:
           - dynamodb:PutItem
         Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.CONTACTS_TABLE}
 
-  UpdateTodo:
+  UpdateContact:
     handler: src/lambda/http/updateContact.handler
     events:
       - http:
@@ -128,7 +129,7 @@ functions:
           - dynamodb:Query
         Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.CONTACTS_TABLE}
 
-  DeleteTodo:
+  DeleteContact:
     handler: src/lambda/http/deleteContact.handler
     events:
       - http:
@@ -168,6 +169,28 @@ functions:
           - dynamodb:UpdateItem
           - dynamodb:GetItem
         Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.CONTACTS_TABLE}
+
+  SendEmail:
+    handler: src/lambda/http/sendAlertEmail.handler
+    events:
+      - http:
+          method: post
+          path: contacts/{contactId}/sendAlertMail
+          cors: true
+          #          authorizer: Auth
+          documentation:
+            summary: Send c19 alert email
+            description: Send c19 alert email to contact
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:GetItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.CONTACTS_TABLE}
+      - Effect: Allow
+        Action:
+          - ses:SendEmail
+          - ses:SendRawEmail
+        Resource: '*'
 
 resources:
   Resources:
