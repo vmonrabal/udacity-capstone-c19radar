@@ -5,7 +5,6 @@ export interface ContactItem {
     when: string,
     where: string,
     email: string,
-    phone?: string,
     infected: boolean,
     evidenceUrl?: string
 }

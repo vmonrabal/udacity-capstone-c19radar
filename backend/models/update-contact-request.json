@@ -25,7 +25,7 @@
     "name",
     "when",
     "where",
-    "boolean"
+    "infected"
   ],
   "additionalProperties": false
 }
