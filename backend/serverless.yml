@@ -126,7 +126,7 @@ functions:
       - Effect: Allow
         Action:
           - dynamodb:UpdateItem
-          - dynamodb:Query
+          - dynamodb:GetItem
         Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.CONTACTS_TABLE}
 
   DeleteContact:
