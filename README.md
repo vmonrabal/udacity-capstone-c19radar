@@ -1,7 +1,5 @@
 # Capstone project - Serverless C19-Radar app
 
-To implement this project, you need to implement a simple TODO application using AWS Lambda and Serverless framework. Search for all comments starting with the `TODO:` in the code to find the placeholders that you need to implement.
-
 # Functionality of the application
 
 The purpose of this application is to manage the contacts you have meet during the C19 pandemic. Using C19-Radar app you will be able to add, update and remove contacts who you have shared time in the last days. Also, you can upload a picture of the day and, finally, you can send an email to alert your contacts in case you are positive in C19 or you have been in contact with a C19 positive
