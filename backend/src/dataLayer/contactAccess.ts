@@ -1,5 +1,5 @@
 import * as AWS from 'aws-sdk'
-//import * as AWSXRay from 'aws-xray-sdk'
+import * as AWSXRay from 'aws-xray-sdk'
 import { DocumentClient } from 'aws-sdk/clients/dynamodb'
 
 import { createLogger } from '../utils/logger'
@@ -7,7 +7,7 @@ import { ContactItem } from '../models/ContactItem'
 import { ContactUpdate } from '../models/ContactUpdate'
 
 const logger = createLogger('contactAccess')
-//const XAWS = AWSXRay.captureAWS(AWS)
+const XAWS = AWSXRay.captureAWS(AWS)
 
 export class ContactAccess {
 
@@ -135,5 +135,5 @@ function createDynamoDBClient() {
             endpoint: 'http://localhost:8000'
         })
     }
-    return new AWS.DynamoDB.DocumentClient()
+    return new XAWS.DynamoDB.DocumentClient()
 }

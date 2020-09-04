@@ -1,11 +1,14 @@
 import * as AWS from "aws-sdk";
+import * as AWSXRay from 'aws-xray-sdk'
 import {ContactItem} from "../models/ContactItem";
 import { SendEmailRequest } from 'aws-sdk/clients/ses';
+
+const XAWS = AWSXRay.captureAWS(AWS)
 
 export class SESHelper {
 
     constructor(
-        private readonly ses = new AWS.SES(),
+        private readonly ses = new XAWS.SES(),
         private readonly senderMail = process.env.SES_SENDER_MAIL
     ) {
     }

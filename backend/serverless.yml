@@ -18,9 +18,9 @@ provider:
   stage: ${opt:stage, 'dev'}
   region: ${opt:region, 'eu-central-1'}
 
-#  tracing:
-#    lambda: true
-#    apiGateway: true
+  tracing:
+    lambda: true
+    apiGateway: true
 
   environment:
     CONTACTS_TABLE: Contacts-${self:provider.stage}
@@ -31,13 +31,13 @@ provider:
     SIGNED_URL_EXPIRATION: 300
     SES_SENDER_MAIL: sls.c19.radar.app@gmail.com
 
-#  iamRoleStatements:
-#    - Effect: Allow
-#      Action:
-#        - 'xray:PutTraceSegments'
-#        - 'xray:PutTelemetryRecords'
-#      Resource:
-#        - '*'
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - 'xray:PutTraceSegments'
+        - 'xray:PutTelemetryRecords'
+      Resource:
+        - '*'
 
 custom:
   serverless-offline:

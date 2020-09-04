@@ -122,7 +122,12 @@ export class Contacts extends React.PureComponent<ContactsProps, ContactsState> 
   }
 
   onAlertEmailButtonClick = async (contactId: string) => {
-    await sendAlertEmail(this.props.auth.getIdToken(), contactId)
+    try {
+      await sendAlertEmail(this.props.auth.getIdToken(), contactId)
+      alert("Alert email sent successfully")
+    } catch (e) {
+      alert("Alert email sending failed")
+    }
   }
 
   async componentDidMount() {
