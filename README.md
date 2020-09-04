@@ -41,7 +41,7 @@ The projec tis fully configured in the `serverless.yml` file:
 ### Note
 The SES (Simple Email Service) is working in sandbox mode in AWS. For that reason only the registered mails by the AWS admin can receive mails. The image below is how the mail will arrive to the users once the SES service is in production mode
 
-![mail](../images/mail.png)
+![mail](../master/images/mail.png)
 
 # How to run the application
 
