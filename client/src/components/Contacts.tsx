@@ -22,6 +22,13 @@ interface ContactsProps {
   history: History
 }
 
+interface ErrorMessages {
+  name: string,
+  email: string,
+  when: string,
+  where: string,
+}
+
 interface ContactsState {
   contacts: Contact[]
   newContactName: string
@@ -29,6 +36,7 @@ interface ContactsState {
   newContactWhen: string
   newContactWhere: string
   loadingContacts: boolean
+  errors: ErrorMessages
 }
 
 export class Contacts extends React.PureComponent<ContactsProps, ContactsState> {
@@ -39,7 +47,8 @@ export class Contacts extends React.PureComponent<ContactsProps, ContactsState> 
     newContactWhen: '',
     newContactWhere: '',
 
-    loadingContacts: true
+    loadingContacts: true,
+    errors: {} as ErrorMessages
   }
 
   handleCreateInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -62,27 +71,52 @@ export class Contacts extends React.PureComponent<ContactsProps, ContactsState> 
     })
   }
 
+  updateValidation(contact: Contact){
+    let where = contact.where
+    let when = contact.when
+    let errors = {} as ErrorMessages
+    let formIsValid = true;
+
+    if(!when) {
+      formIsValid = false;
+      errors.when = 'When cannot be empty'
+    }
+
+    if(!where) {
+      formIsValid = false;
+      errors.where = 'Where cannot be empty'
+    }
+
+    this.state.errors = errors
+    return formIsValid;
+  }
+
   onContactEdit = async (pos: number) => {
-    try {
-      const contact = this.state.contacts[pos]
-      await patchContact(this.props.auth.getIdToken(), contact.contactId, {
-        name: contact.name,
-        when: contact.when,
-        where: contact.where,
-        infected: contact.infected
-      })
-      this.setState({
-        contacts: update(this.state.contacts, {
-          [pos]: {
-            when: { $set: contact.when },
-            where: { $set: contact.where },
-            infected: { $set: contact.infected }
-          }
+    const contact = this.state.contacts[pos]
+    if(!this.updateValidation(contact)){
+      alert(JSON.stringify(this.state.errors))
+    }
+    else {
+      try {
+        await patchContact(this.props.auth.getIdToken(), contact.contactId, {
+          name: contact.name,
+          when: contact.when,
+          where: contact.where,
+          infected: contact.infected
         })
-      })
-      alert("Contact updated!")
-    } catch {
-      alert('Contact update failed')
+        this.setState({
+          contacts: update(this.state.contacts, {
+            [pos]: {
+              when: {$set: contact.when},
+              where: {$set: contact.where},
+              infected: {$set: contact.infected}
+            }
+          })
+        })
+        alert("Contact updated!")
+      } catch (e) {
+        alert('Contact update failed')
+      }
     }
   }
 
@@ -90,23 +124,66 @@ export class Contacts extends React.PureComponent<ContactsProps, ContactsState> 
     this.props.history.push(`/contacts/${contactId}/edit`)
   }
 
+  createValidation(){
+    let name = this.state.newContactName
+    let where = this.state.newContactWhere
+    let when = this.state.newContactWhen
+    let email = this.state.newContactEmail
+    let errors = {} as ErrorMessages
+    let formIsValid = true;
+
+    //Name
+    if(!name) {
+      formIsValid = false;
+      errors.name ='Name cannot be empty'
+    }
+    else if (name.length < 5 || name.length > 20){
+      formIsValid = false;
+      errors.name = 'Name has to be between 5 and 20 characters'
+    }
+
+    if(!email) {
+      formIsValid = false;
+      errors.email = 'Email cannot be empty'
+    }
+
+    if(!when) {
+      formIsValid = false;
+      errors.when = 'When cannot be empty'
+    }
+
+    if(!where) {
+      formIsValid = false;
+      errors.where = 'Where cannot be empty'
+    }
+
+    this.state.errors = errors
+    return formIsValid;
+  }
+
   onContactCreate = async () => {
-    try {
-      const newContact = await createContact(this.props.auth.getIdToken(), {
-        name: this.state.newContactName,
-        where: this.state.newContactWhere,
-        when: this.state.newContactWhen,
-        email: this.state.newContactEmail
-      })
-      this.setState({
-        contacts: [...this.state.contacts, newContact],
-        newContactName: '',
-        newContactEmail: '',
-        newContactWhen: '',
-        newContactWhere: ''
-      })
-    } catch {
-      alert('Contact creation failed')
+    if(!this.createValidation()){
+      alert(JSON.stringify(this.state.errors))
+    }
+    else {
+      try {
+        const newContact = await createContact(this.props.auth.getIdToken(), {
+          name: this.state.newContactName,
+          where: this.state.newContactWhere,
+          when: this.state.newContactWhen,
+          email: this.state.newContactEmail
+        })
+        this.setState({
+          contacts: [...this.state.contacts, newContact],
+          newContactName: '',
+          newContactEmail: '',
+          newContactWhen: '',
+          newContactWhere: '',
+          errors: {} as ErrorMessages
+        })
+      } catch {
+        alert('Contact creation failed due to server error. Please report the error')
+      }
     }
   }
 
@@ -164,6 +241,7 @@ export class Contacts extends React.PureComponent<ContactsProps, ContactsState> 
                 value={this.state.newContactName}
                 placeholder="Name"
                 onChange={this.handleCreateInputChange}
+                required
               />
             </Grid.Column>
             <Grid.Column width={3}>
@@ -242,6 +320,7 @@ export class Contacts extends React.PureComponent<ContactsProps, ContactsState> 
                     name="when"
                     value={contact.when}
                     onChange={(e) => this.handleUpdateInputChange(pos, e)}
+                    placeholder="yyyy-mm-dd"
                 />
               </Grid.Column>
               <Grid.Column width={3} verticalAlign="middle">
@@ -249,6 +328,7 @@ export class Contacts extends React.PureComponent<ContactsProps, ContactsState> 
                     name="where"
                     value={contact.where}
                     onChange={(e) => this.handleUpdateInputChange(pos, e)}
+                    placeholder="where"
                 />
               </Grid.Column>
               <Grid.Column width={2} verticalAlign="middle">
